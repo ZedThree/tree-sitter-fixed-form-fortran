@@ -10,7 +10,9 @@ enum TokenType {
     FLOAT_LITERAL,
     BOZ_LITERAL,
     STRING_LITERAL,
+    STRING_LITERAL_KIND,
     END_OF_STATEMENT,
+    PREPROC_UNARY_OPERATOR,
     COMMENT_CHARACTER
 };
 
@@ -23,7 +25,8 @@ static inline void skip(TSLexer *lexer) { lexer->advance(lexer, true); }
 /// Get current column number of lexer
 static inline uint32_t get_column(TSLexer *lexer) { return lexer->get_column(lexer); }
 
-static bool is_ident_char(char chr) { return iswalnum(chr) || chr == '_'; }
+// is `chr` ok for an identifier?
+static bool is_identifier_char(char chr) { return iswalnum(chr) || chr == '_'; }
 
 static bool is_boz_sentinel(char chr) {
     switch (chr) {
@@ -51,14 +54,6 @@ static bool is_exp_sentinel(char chr) {
     }
 }
 
-static bool is_comment_character(TSLexer *lexer) {
-    const bool character_in_first_column = (get_column(lexer) == 0
-        && (lexer->lookahead == 'c'
-            || lexer->lookahead == 'C'
-            || lexer->lookahead == '*'));
-    return (character_in_first_column || lexer->lookahead == '!');
-}  
-
 static bool scan_int(TSLexer *lexer) {
     if (!iswdigit(lexer->lookahead)) {
         return false;
@@ -66,6 +61,21 @@ static bool scan_int(TSLexer *lexer) {
     // consume digits
     while (iswdigit(lexer->lookahead)) {
         advance(lexer); // store all digits
+    }
+
+    // handle line continuations
+    if (lexer->lookahead == '&') {
+      skip(lexer);
+      while (iswspace(lexer->lookahead)) {
+        skip(lexer);
+      }
+      // second '&' required to continue the literal
+      if (lexer->lookahead == '&') {
+        skip(lexer);
+        // don't return here, as we may have finished literal on first
+        // line but still have second '&'
+        scan_int(lexer);
+      }
     }
 
     lexer->mark_end(lexer);
@@ -78,9 +88,6 @@ static bool scan_number(TSLexer *lexer) {
     bool digits = scan_int(lexer);
     if (lexer->lookahead == '.') {
         advance(lexer);
-        while (iswblank(lexer->lookahead)) {
-            skip(lexer);
-        }
         // exclude decimal if followed by any letter other than d/D and e/E
         // if no leading digits are present and a non-digit follows
         // the decimal it's a nonmatch.
@@ -105,17 +112,6 @@ static bool scan_number(TSLexer *lexer) {
             }
             lexer->mark_end(lexer);
             lexer->result_symbol = FLOAT_LITERAL;
-        }
-        // get size qualifer
-        if (lexer->lookahead == '_') {
-            advance(lexer);
-            if (!isalnum(lexer->lookahead)) {
-                return true; // valid number token with junk after it
-            }
-            while (is_ident_char(lexer->lookahead)) {
-                advance(lexer); // store all digits
-            }
-            lexer->mark_end(lexer);
         }
     }
     return digits;
@@ -151,6 +147,13 @@ static bool scan_boz(TSLexer *lexer) {
     return false;
 }
 
+static bool is_comment_character(TSLexer *lexer) {
+    const bool character_in_first_column = (get_column(lexer) == 0
+        && (lexer->lookahead == 'c'
+            || lexer->lookahead == 'C'
+            || lexer->lookahead == '*'));
+    return (character_in_first_column || lexer->lookahead == '!');
+}
 
 static bool scan_continuation(TSLexer *lexer) {
     // These appear on the _next_ line in column 6 (1-indexed)
@@ -214,6 +217,33 @@ static bool scan_end_of_statement(TSLexer *lexer) {
     lexer->result_symbol = END_OF_STATEMENT;
     return true;
 }
+static bool scan_string_literal_kind(TSLexer *lexer) {
+  // Strictly, it's allowed for the kind to be an integer literal, in
+  // practice I've not seen it
+  if (!iswalpha(lexer->lookahead)) {
+    return false;
+  }
+
+  lexer->result_symbol = STRING_LITERAL_KIND;
+
+  // We need two characters of lookahead to see `_"`
+  char current_char = '\0';
+
+  while (is_identifier_char(lexer->lookahead) && !lexer->eof(lexer)) {
+      current_char = lexer->lookahead;
+      // Don't capture the trailing underscore as part of the kind identifier
+      if (lexer->lookahead == '_') {
+          lexer->mark_end(lexer);
+      }
+      advance(lexer);
+  }
+
+  if ((current_char != '_') || (lexer->lookahead != '"' && lexer->lookahead != '\'')) {
+    return false;
+  }
+
+  return true;
+}
 
 static bool scan_string_literal(TSLexer *lexer) {
     const char opening_quote = lexer->lookahead;
@@ -255,6 +285,17 @@ static bool scan_string_literal(TSLexer *lexer) {
     // We hit the end of the line without a line continuation, so this
     // is an unclosed string literal (an error)
     return false;
+}
+
+/// Need an external scanner to catch '!' before its parsed as a comment
+static bool scan_preproc_unary_operator(TSLexer *lexer) {
+  const char next_char = lexer->lookahead;
+  if (next_char == '!' || next_char == '~' || next_char == '-' || next_char == '+') {
+    advance(lexer);
+    lexer->result_symbol = PREPROC_UNARY_OPERATOR;
+    return true;
+  }
+  return false;
 }
 
 static bool scan_comment(TSLexer *lexer) {
@@ -306,6 +347,20 @@ static bool scan(TSLexer *lexer, const bool *valid_symbols) {
         if (scan_boz(lexer)) {
             return true;
         }
+    }
+
+    if (valid_symbols[PREPROC_UNARY_OPERATOR]) {
+      if (scan_preproc_unary_operator(lexer)) {
+        return true;
+      }
+    }
+
+    if (valid_symbols[STRING_LITERAL_KIND]) {
+      // This may need a lot of lookahead, so should (probably) always
+      // be the last token to look for
+      if (scan_string_literal_kind(lexer)) {
+        return true;
+      }
     }
 
     return false;

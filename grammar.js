@@ -9,10 +9,6 @@ module.exports = grammar(FORTRAN, {
     $._comment_character
   ]),
 
-  conflicts: ($, original) => original.concat([
-    [$._comment_character, $.identifier],
-  ]),
-
   rules: {
     comment: $ => seq($._comment_character, token(/.*/)),
   }

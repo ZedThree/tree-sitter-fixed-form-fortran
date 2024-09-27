@@ -54,7 +54,7 @@
   },
   "tree-sitter": [
     {
-      "scope": "source.fortran",
+      "scope": "source.fortran-fixed-form",
       "file-types": [
         "F90",
         "f90",

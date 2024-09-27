@@ -66,13 +66,17 @@ Array arguments
     (subroutine_statement (name) (parameters (identifier) (identifier) (identifier)))
     (variable_declaration (intrinsic_type) (identifier))
     (comment)
-    (variable_declaration (intrinsic_type) (size)
-      (call_expression (identifier)
-        (argument_list
+    (variable_declaration
+      (intrinsic_type
+        (kind
+          (number_literal)))
+      (sized_declarator
+        (identifier)
+        (size
           (extent_specifier (number_literal)
             (math_expression (identifier) (number_literal)))
           (extent_specifier (number_literal) (assumed_size))))
-      (call_expression (identifier) (argument_list
+      (sized_declarator (identifier) (size
           (extent_specifier (number_literal) (assumed_size)))))
     (end_subroutine_statement)))
 

@@ -15601,10 +15601,6 @@
     [
       "preproc_else_in_specification_part",
       "program"
-    ],
-    [
-      "_comment_character",
-      "identifier"
     ]
   ],
   "precedences": [],
