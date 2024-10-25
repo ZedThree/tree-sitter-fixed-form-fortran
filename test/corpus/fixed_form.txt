@@ -9,14 +9,26 @@ C     Comment with caps
 
 *     Comment with asterix
 
+*> This snippet is to check that
+*
+*  comments formatted like this
+*
+*> aren't nested inside other comments
+*
+
 ---
 
 (translation_unit
-    (comment)
-    (comment)
-    (comment)
-    (comment)
-)
+  (comment)
+  (comment)
+  (comment)
+  (comment)
+  (comment)
+  (comment)
+  (comment)
+  (comment)
+  (comment)
+  (comment))
 
 ====================
 Line continuations
@@ -36,17 +48,24 @@ Line continuations
 
 (translation_unit
   (program
-    (program_statement (name))
+    (program_statement
+      (name))
     (if_statement
       (parenthesized_expression
         (logical_expression
-          (logical_expression (identifier) (identifier))
+          (logical_expression
+            (identifier)
+            (identifier))
           (identifier)))
-      (assignment_statement (identifier) (number_literal))
+      (assignment_statement
+        (identifier)
+        (number_literal))
       (end_if_statement))
     (assignment_statement
       (identifier)
-      (math_expression (identifier) (identifier)))
+      (math_expression
+        (identifier)
+        (identifier)))
     (end_program_statement)))
 
 ====================
@@ -63,8 +82,15 @@ Array arguments
 
 (translation_unit
   (subroutine
-    (subroutine_statement (name) (parameters (identifier) (identifier) (identifier)))
-    (variable_declaration (intrinsic_type) (identifier))
+    (subroutine_statement
+      (name)
+      (parameters
+        (identifier)
+        (identifier)
+        (identifier)))
+    (variable_declaration
+      (intrinsic_type)
+      (identifier))
     (comment)
     (variable_declaration
       (intrinsic_type
@@ -73,11 +99,20 @@ Array arguments
       (sized_declarator
         (identifier)
         (size
-          (extent_specifier (number_literal)
-            (math_expression (identifier) (number_literal)))
-          (extent_specifier (number_literal) (assumed_size))))
-      (sized_declarator (identifier) (size
-          (extent_specifier (number_literal) (assumed_size)))))
+          (extent_specifier
+            (number_literal)
+            (math_expression
+              (identifier)
+              (number_literal)))
+          (extent_specifier
+            (number_literal)
+            (assumed_size))))
+      (sized_declarator
+        (identifier)
+        (size
+          (extent_specifier
+            (number_literal)
+            (assumed_size)))))
     (end_subroutine_statement)))
 
 ========================================
@@ -89,10 +124,13 @@ Line continuation string literal
       END
 
 ---
+
 (translation_unit
   (program
-    (print_statement (format_identifier)
-      (output_item_list (string_literal)))
+    (print_statement
+      (format_identifier)
+      (output_item_list
+        (string_literal)))
     (end_program_statement)))
 
 ================================================================================

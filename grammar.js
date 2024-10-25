@@ -6,10 +6,8 @@ module.exports = grammar(FORTRAN, {
   name: 'fixed_form_fortran',
 
   externals: ($, original) => original.concat([
-    $._comment_character
+    $.comment,
   ]),
 
-  rules: {
-    comment: $ => seq($._comment_character, token(/.*/)),
-  }
+  rules: {}
 })

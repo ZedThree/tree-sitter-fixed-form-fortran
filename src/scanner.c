@@ -13,7 +13,7 @@ enum TokenType {
     STRING_LITERAL_KIND,
     END_OF_STATEMENT,
     PREPROC_UNARY_OPERATOR,
-    COMMENT_CHARACTER
+    COMMENT,
 };
 
 //  consume current character into current token and advance
@@ -302,8 +302,10 @@ static bool scan_comment(TSLexer *lexer) {
     if (!is_comment_character(lexer)) {
         return false;
     }
-    lexer->result_symbol = COMMENT_CHARACTER;
-    advance(lexer);
+    lexer->result_symbol = COMMENT;
+    while (lexer->lookahead != '\n') {
+        advance(lexer);
+    }
     return true;
 }
 

@@ -1421,11 +1421,6 @@
     }
   },
   {
-    "type": "comment",
-    "named": true,
-    "fields": {}
-  },
-  {
     "type": "common_statement",
     "named": true,
     "fields": {},
@@ -11062,6 +11057,10 @@
   {
     "type": "close",
     "named": false
+  },
+  {
+    "type": "comment",
+    "named": true
   },
   {
     "type": "common",

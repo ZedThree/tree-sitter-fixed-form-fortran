@@ -15682,20 +15682,20 @@
       ]
     },
     "comment": {
-      "type": "SEQ",
-      "members": [
-        {
-          "type": "SYMBOL",
-          "name": "_comment_character"
-        },
-        {
-          "type": "TOKEN",
-          "content": {
+      "type": "TOKEN",
+      "content": {
+        "type": "SEQ",
+        "members": [
+          {
+            "type": "STRING",
+            "value": "!"
+          },
+          {
             "type": "PATTERN",
             "value": ".*"
           }
-        }
-      ]
+        ]
+      }
     },
     "_semicolon": {
       "type": "STRING",
@@ -15826,7 +15826,7 @@
     },
     {
       "type": "SYMBOL",
-      "name": "_comment_character"
+      "name": "comment"
     }
   ],
   "inline": [
