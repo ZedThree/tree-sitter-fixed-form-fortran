@@ -101,6 +101,9 @@ static bool scan_number(TSLexer *lexer) {
     // no leading digit it's a nonmatch.
     digits = scan_int(lexer) || digits;
     if (digits) {
+        while (iswblank(lexer->lookahead)) {
+            advance(lexer);
+        }
         // process exp notation
         if (is_exp_sentinel(lexer->lookahead)) {
             advance(lexer);
