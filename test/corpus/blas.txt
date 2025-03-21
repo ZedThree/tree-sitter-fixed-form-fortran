@@ -1,0 +1,891 @@
+====================
+chpr
+====================
+
+*> \brief \b CHPR
+*
+*  =========== DOCUMENTATION ===========
+*
+*> \par Purpose:
+*  =============
+*>
+*> \verbatim
+*>
+*> CHPR    performs the hermitian rank 1 operation
+*>
+*>    A := alpha*x*x**H + A,
+*>
+*> where alpha is a real scalar, x is an n element vector and A is an
+*> n by n hermitian matrix, supplied in packed form.
+*> \endverbatim
+*
+*  =====================================================================
+      SUBROUTINE CHPR(UPLO,N,ALPHA,X,INCX,AP)
+*
+*  -- Reference BLAS level2 routine --
+*  -- Reference BLAS is a software package provided by Univ. of Tennessee,    --
+*  -- Univ. of California Berkeley, Univ. of Colorado Denver and NAG Ltd..--
+*
+*     .. Scalar Arguments ..
+      REAL ALPHA
+      INTEGER INCX,N
+      CHARACTER UPLO
+*     ..
+*     .. Array Arguments ..
+      COMPLEX AP(*),X(*)
+*     ..
+*
+*  =====================================================================
+*
+*     .. Parameters ..
+      COMPLEX ZERO
+      PARAMETER (ZERO= (0.0E+0,0.0E+0))
+*     ..
+*     .. Local Scalars ..
+      COMPLEX TEMP
+      INTEGER I,INFO,IX,J,JX,K,KK,KX
+*     ..
+*     .. External Functions ..
+      LOGICAL LSAME
+      EXTERNAL LSAME
+*     ..
+*     .. External Subroutines ..
+      EXTERNAL XERBLA
+*     ..
+*     .. Intrinsic Functions ..
+      INTRINSIC CONJG,REAL
+*     ..
+*
+*     Test the input parameters.
+*
+      INFO = 0
+      IF (.NOT.LSAME(UPLO,'U') .AND. .NOT.LSAME(UPLO,'L')) THEN
+          INFO = 1
+      ELSE IF (N.LT.0) THEN
+          INFO = 2
+      ELSE IF (INCX.EQ.0) THEN
+          INFO = 5
+      END IF
+      IF (INFO.NE.0) THEN
+          CALL XERBLA('CHPR  ',INFO)
+          RETURN
+      END IF
+*
+*     Quick return if possible.
+*
+      IF ((N.EQ.0) .OR. (ALPHA.EQ.REAL(ZERO))) RETURN
+*
+*     Set the start point in X if the increment is not unity.
+*
+      IF (INCX.LE.0) THEN
+          KX = 1 - (N-1)*INCX
+      ELSE IF (INCX.NE.1) THEN
+          KX = 1
+      END IF
+*
+*     Start the operations. In this version the elements of the array AP
+*     are accessed sequentially with one pass through AP.
+*
+      KK = 1
+      IF (LSAME(UPLO,'U')) THEN
+*
+*        Form  A  when upper triangle is stored in AP.
+*
+          IF (INCX.EQ.1) THEN
+              DO 20 J = 1,N
+                  IF (X(J).NE.ZERO) THEN
+                      TEMP = ALPHA*CONJG(X(J))
+                      K = KK
+                      DO 10 I = 1,J - 1
+                          AP(K) = AP(K) + X(I)*TEMP
+                          K = K + 1
+   10                 CONTINUE
+                      AP(KK+J-1) = REAL(AP(KK+J-1)) + REAL(X(J)*TEMP)
+                  ELSE
+                      AP(KK+J-1) = REAL(AP(KK+J-1))
+                  END IF
+                  KK = KK + J
+   20         CONTINUE
+          ELSE
+              JX = KX
+              DO 40 J = 1,N
+                  IF (X(JX).NE.ZERO) THEN
+                      TEMP = ALPHA*CONJG(X(JX))
+                      IX = KX
+                      DO 30 K = KK,KK + J - 2
+                          AP(K) = AP(K) + X(IX)*TEMP
+                          IX = IX + INCX
+   30                 CONTINUE
+                      AP(KK+J-1) = REAL(AP(KK+J-1)) + REAL(X(JX)*TEMP)
+                  ELSE
+                      AP(KK+J-1) = REAL(AP(KK+J-1))
+                  END IF
+                  JX = JX + INCX
+                  KK = KK + J
+   40         CONTINUE
+          END IF
+      ELSE
+*
+*        Form  A  when lower triangle is stored in AP.
+*
+          IF (INCX.EQ.1) THEN
+              DO 60 J = 1,N
+                  IF (X(J).NE.ZERO) THEN
+                      TEMP = ALPHA*CONJG(X(J))
+                      AP(KK) = REAL(AP(KK)) + REAL(TEMP*X(J))
+                      K = KK + 1
+                      DO 50 I = J + 1,N
+                          AP(K) = AP(K) + X(I)*TEMP
+                          K = K + 1
+   50                 CONTINUE
+                  ELSE
+                      AP(KK) = REAL(AP(KK))
+                  END IF
+                  KK = KK + N - J + 1
+   60         CONTINUE
+          ELSE
+              JX = KX
+              DO 80 J = 1,N
+                  IF (X(JX).NE.ZERO) THEN
+                      TEMP = ALPHA*CONJG(X(JX))
+                      AP(KK) = REAL(AP(KK)) + REAL(TEMP*X(JX))
+                      IX = JX
+                      DO 70 K = KK + 1,KK + N - J
+                          IX = IX + INCX
+                          AP(K) = AP(K) + X(IX)*TEMP
+   70                 CONTINUE
+                  ELSE
+                      AP(KK) = REAL(AP(KK))
+                  END IF
+                  JX = JX + INCX
+                  KK = KK + N - J + 1
+   80         CONTINUE
+          END IF
+      END IF
+*
+      RETURN
+*
+*     End of CHPR
+*
+      END
+
+---
+
+(translation_unit
+  (comment)
+  (comment)
+  (comment)
+  (comment)
+  (comment)
+  (comment)
+  (comment)
+  (comment)
+  (comment)
+  (comment)
+  (comment)
+  (comment)
+  (comment)
+  (comment)
+  (comment)
+  (comment)
+  (comment)
+  (comment)
+  (subroutine
+    (subroutine_statement
+      (name)
+      (parameters
+        (identifier)
+        (identifier)
+        (identifier)
+        (identifier)
+        (identifier)
+        (identifier)))
+    (comment)
+    (comment)
+    (comment)
+    (comment)
+    (comment)
+    (comment)
+    (variable_declaration
+      (intrinsic_type)
+      (identifier))
+    (variable_declaration
+      (intrinsic_type)
+      (identifier)
+      (identifier))
+    (variable_declaration
+      (intrinsic_type)
+      (identifier))
+    (comment)
+    (comment)
+    (variable_declaration
+      (intrinsic_type)
+      (sized_declarator
+        (identifier)
+        (size
+          (assumed_size)))
+      (sized_declarator
+        (identifier)
+        (size
+          (assumed_size))))
+    (comment)
+    (comment)
+    (comment)
+    (comment)
+    (comment)
+    (variable_declaration
+      (intrinsic_type)
+      (identifier))
+    (parameter_statement
+      (parameter_assignment
+        (identifier)
+        (complex_literal
+          (number_literal)
+          (number_literal))))
+    (comment)
+    (comment)
+    (variable_declaration
+      (intrinsic_type)
+      (identifier))
+    (variable_declaration
+      (intrinsic_type)
+      (identifier)
+      (identifier)
+      (identifier)
+      (identifier)
+      (identifier)
+      (identifier)
+      (identifier)
+      (identifier))
+    (comment)
+    (comment)
+    (variable_declaration
+      (intrinsic_type)
+      (identifier))
+    (variable_modification
+      (type_qualifier)
+      (identifier))
+    (comment)
+    (comment)
+    (variable_modification
+      (type_qualifier)
+      (identifier))
+    (comment)
+    (comment)
+    (variable_modification
+      (type_qualifier)
+      (identifier)
+      (identifier))
+    (comment)
+    (comment)
+    (comment)
+    (comment)
+    (assignment_statement
+      (identifier)
+      (number_literal))
+    (if_statement
+      (parenthesized_expression
+        (logical_expression
+          (logical_expression
+            (call_expression
+              (identifier)
+              (argument_list
+                (identifier)
+                (string_literal))))
+          (logical_expression
+            (call_expression
+              (identifier)
+              (argument_list
+                (identifier)
+                (string_literal))))))
+      (assignment_statement
+        (identifier)
+        (number_literal))
+      (elseif_clause
+        (parenthesized_expression
+          (relational_expression
+            (identifier)
+            (number_literal)))
+        (assignment_statement
+          (identifier)
+          (number_literal)))
+      (elseif_clause
+        (parenthesized_expression
+          (relational_expression
+            (identifier)
+            (number_literal)))
+        (assignment_statement
+          (identifier)
+          (number_literal)))
+      (end_if_statement))
+    (if_statement
+      (parenthesized_expression
+        (relational_expression
+          (identifier)
+          (number_literal)))
+      (subroutine_call
+        (identifier)
+        (argument_list
+          (string_literal)
+          (identifier)))
+      (keyword_statement)
+      (end_if_statement))
+    (comment)
+    (comment)
+    (comment)
+    (if_statement
+      (parenthesized_expression
+        (logical_expression
+          (parenthesized_expression
+            (relational_expression
+              (identifier)
+              (number_literal)))
+          (parenthesized_expression
+            (relational_expression
+              (identifier)
+              (call_expression
+                (identifier)
+                (argument_list
+                  (identifier)))))))
+      (keyword_statement))
+    (comment)
+    (comment)
+    (comment)
+    (if_statement
+      (parenthesized_expression
+        (relational_expression
+          (identifier)
+          (number_literal)))
+      (assignment_statement
+        (identifier)
+        (math_expression
+          (number_literal)
+          (math_expression
+            (parenthesized_expression
+              (math_expression
+                (identifier)
+                (number_literal)))
+            (identifier))))
+      (elseif_clause
+        (parenthesized_expression
+          (relational_expression
+            (identifier)
+            (number_literal)))
+        (assignment_statement
+          (identifier)
+          (number_literal)))
+      (end_if_statement))
+    (comment)
+    (comment)
+    (comment)
+    (comment)
+    (assignment_statement
+      (identifier)
+      (number_literal))
+    (if_statement
+      (parenthesized_expression
+        (call_expression
+          (identifier)
+          (argument_list
+            (identifier)
+            (string_literal))))
+      (comment)
+      (comment)
+      (comment)
+      (if_statement
+        (parenthesized_expression
+          (relational_expression
+            (identifier)
+            (number_literal)))
+        (do_label_statement
+          (statement_label_reference)
+          (loop_control_expression
+            (identifier)
+            (number_literal)
+            (identifier)))
+        (if_statement
+          (parenthesized_expression
+            (relational_expression
+              (call_expression
+                (identifier)
+                (argument_list
+                  (identifier)))
+              (identifier)))
+          (assignment_statement
+            (identifier)
+            (math_expression
+              (identifier)
+              (call_expression
+                (identifier)
+                (argument_list
+                  (call_expression
+                    (identifier)
+                    (argument_list
+                      (identifier)))))))
+          (assignment_statement
+            (identifier)
+            (identifier))
+          (do_label_statement
+            (statement_label_reference)
+            (loop_control_expression
+              (identifier)
+              (number_literal)
+              (math_expression
+                (identifier)
+                (number_literal))))
+          (assignment_statement
+            (call_expression
+              (identifier)
+              (argument_list
+                (identifier)))
+            (math_expression
+              (call_expression
+                (identifier)
+                (argument_list
+                  (identifier)))
+              (math_expression
+                (call_expression
+                  (identifier)
+                  (argument_list
+                    (identifier)))
+                (identifier))))
+          (assignment_statement
+            (identifier)
+            (math_expression
+              (identifier)
+              (number_literal)))
+          (statement_label)
+          (keyword_statement)
+          (assignment_statement
+            (call_expression
+              (identifier)
+              (argument_list
+                (math_expression
+                  (math_expression
+                    (identifier)
+                    (identifier))
+                  (number_literal))))
+            (math_expression
+              (call_expression
+                (identifier)
+                (argument_list
+                  (call_expression
+                    (identifier)
+                    (argument_list
+                      (math_expression
+                        (math_expression
+                          (identifier)
+                          (identifier))
+                        (number_literal))))))
+              (call_expression
+                (identifier)
+                (argument_list
+                  (math_expression
+                    (call_expression
+                      (identifier)
+                      (argument_list
+                        (identifier)))
+                    (identifier))))))
+          (else_clause
+            (assignment_statement
+              (call_expression
+                (identifier)
+                (argument_list
+                  (math_expression
+                    (math_expression
+                      (identifier)
+                      (identifier))
+                    (number_literal))))
+              (call_expression
+                (identifier)
+                (argument_list
+                  (call_expression
+                    (identifier)
+                    (argument_list
+                      (math_expression
+                        (math_expression
+                          (identifier)
+                          (identifier))
+                        (number_literal))))))))
+          (end_if_statement))
+        (assignment_statement
+          (identifier)
+          (math_expression
+            (identifier)
+            (identifier)))
+        (statement_label)
+        (keyword_statement)
+        (else_clause
+          (assignment_statement
+            (identifier)
+            (identifier))
+          (do_label_statement
+            (statement_label_reference)
+            (loop_control_expression
+              (identifier)
+              (number_literal)
+              (identifier)))
+          (if_statement
+            (parenthesized_expression
+              (relational_expression
+                (call_expression
+                  (identifier)
+                  (argument_list
+                    (identifier)))
+                (identifier)))
+            (assignment_statement
+              (identifier)
+              (math_expression
+                (identifier)
+                (call_expression
+                  (identifier)
+                  (argument_list
+                    (call_expression
+                      (identifier)
+                      (argument_list
+                        (identifier)))))))
+            (assignment_statement
+              (identifier)
+              (identifier))
+            (do_label_statement
+              (statement_label_reference)
+              (loop_control_expression
+                (identifier)
+                (identifier)
+                (math_expression
+                  (math_expression
+                    (identifier)
+                    (identifier))
+                  (number_literal))))
+            (assignment_statement
+              (call_expression
+                (identifier)
+                (argument_list
+                  (identifier)))
+              (math_expression
+                (call_expression
+                  (identifier)
+                  (argument_list
+                    (identifier)))
+                (math_expression
+                  (call_expression
+                    (identifier)
+                    (argument_list
+                      (identifier)))
+                  (identifier))))
+            (assignment_statement
+              (identifier)
+              (math_expression
+                (identifier)
+                (identifier)))
+            (statement_label)
+            (keyword_statement)
+            (assignment_statement
+              (call_expression
+                (identifier)
+                (argument_list
+                  (math_expression
+                    (math_expression
+                      (identifier)
+                      (identifier))
+                    (number_literal))))
+              (math_expression
+                (call_expression
+                  (identifier)
+                  (argument_list
+                    (call_expression
+                      (identifier)
+                      (argument_list
+                        (math_expression
+                          (math_expression
+                            (identifier)
+                            (identifier))
+                          (number_literal))))))
+                (call_expression
+                  (identifier)
+                  (argument_list
+                    (math_expression
+                      (call_expression
+                        (identifier)
+                        (argument_list
+                          (identifier)))
+                      (identifier))))))
+            (else_clause
+              (assignment_statement
+                (call_expression
+                  (identifier)
+                  (argument_list
+                    (math_expression
+                      (math_expression
+                        (identifier)
+                        (identifier))
+                      (number_literal))))
+                (call_expression
+                  (identifier)
+                  (argument_list
+                    (call_expression
+                      (identifier)
+                      (argument_list
+                        (math_expression
+                          (math_expression
+                            (identifier)
+                            (identifier))
+                          (number_literal))))))))
+            (end_if_statement))
+          (assignment_statement
+            (identifier)
+            (math_expression
+              (identifier)
+              (identifier)))
+          (assignment_statement
+            (identifier)
+            (math_expression
+              (identifier)
+              (identifier)))
+          (statement_label)
+          (keyword_statement))
+        (end_if_statement))
+      (else_clause
+        (comment)
+        (comment)
+        (comment)
+        (if_statement
+          (parenthesized_expression
+            (relational_expression
+              (identifier)
+              (number_literal)))
+          (do_label_statement
+            (statement_label_reference)
+            (loop_control_expression
+              (identifier)
+              (number_literal)
+              (identifier)))
+          (if_statement
+            (parenthesized_expression
+              (relational_expression
+                (call_expression
+                  (identifier)
+                  (argument_list
+                    (identifier)))
+                (identifier)))
+            (assignment_statement
+              (identifier)
+              (math_expression
+                (identifier)
+                (call_expression
+                  (identifier)
+                  (argument_list
+                    (call_expression
+                      (identifier)
+                      (argument_list
+                        (identifier)))))))
+            (assignment_statement
+              (call_expression
+                (identifier)
+                (argument_list
+                  (identifier)))
+              (math_expression
+                (call_expression
+                  (identifier)
+                  (argument_list
+                    (call_expression
+                      (identifier)
+                      (argument_list
+                        (identifier)))))
+                (call_expression
+                  (identifier)
+                  (argument_list
+                    (math_expression
+                      (identifier)
+                      (call_expression
+                        (identifier)
+                        (argument_list
+                          (identifier))))))))
+            (assignment_statement
+              (identifier)
+              (math_expression
+                (identifier)
+                (number_literal)))
+            (do_label_statement
+              (statement_label_reference)
+              (loop_control_expression
+                (identifier)
+                (math_expression
+                  (identifier)
+                  (number_literal))
+                (identifier)))
+            (assignment_statement
+              (call_expression
+                (identifier)
+                (argument_list
+                  (identifier)))
+              (math_expression
+                (call_expression
+                  (identifier)
+                  (argument_list
+                    (identifier)))
+                (math_expression
+                  (call_expression
+                    (identifier)
+                    (argument_list
+                      (identifier)))
+                  (identifier))))
+            (assignment_statement
+              (identifier)
+              (math_expression
+                (identifier)
+                (number_literal)))
+            (statement_label)
+            (keyword_statement)
+            (else_clause
+              (assignment_statement
+                (call_expression
+                  (identifier)
+                  (argument_list
+                    (identifier)))
+                (call_expression
+                  (identifier)
+                  (argument_list
+                    (call_expression
+                      (identifier)
+                      (argument_list
+                        (identifier)))))))
+            (end_if_statement))
+          (assignment_statement
+            (identifier)
+            (math_expression
+              (math_expression
+                (math_expression
+                  (identifier)
+                  (identifier))
+                (identifier))
+              (number_literal)))
+          (statement_label)
+          (keyword_statement)
+          (else_clause
+            (assignment_statement
+              (identifier)
+              (identifier))
+            (do_label_statement
+              (statement_label_reference)
+              (loop_control_expression
+                (identifier)
+                (number_literal)
+                (identifier)))
+            (if_statement
+              (parenthesized_expression
+                (relational_expression
+                  (call_expression
+                    (identifier)
+                    (argument_list
+                      (identifier)))
+                  (identifier)))
+              (assignment_statement
+                (identifier)
+                (math_expression
+                  (identifier)
+                  (call_expression
+                    (identifier)
+                    (argument_list
+                      (call_expression
+                        (identifier)
+                        (argument_list
+                          (identifier)))))))
+              (assignment_statement
+                (call_expression
+                  (identifier)
+                  (argument_list
+                    (identifier)))
+                (math_expression
+                  (call_expression
+                    (identifier)
+                    (argument_list
+                      (call_expression
+                        (identifier)
+                        (argument_list
+                          (identifier)))))
+                  (call_expression
+                    (identifier)
+                    (argument_list
+                      (math_expression
+                        (identifier)
+                        (call_expression
+                          (identifier)
+                          (argument_list
+                            (identifier))))))))
+              (assignment_statement
+                (identifier)
+                (identifier))
+              (do_label_statement
+                (statement_label_reference)
+                (loop_control_expression
+                  (identifier)
+                  (math_expression
+                    (identifier)
+                    (number_literal))
+                  (math_expression
+                    (math_expression
+                      (identifier)
+                      (identifier))
+                    (identifier))))
+              (assignment_statement
+                (identifier)
+                (math_expression
+                  (identifier)
+                  (identifier)))
+              (assignment_statement
+                (call_expression
+                  (identifier)
+                  (argument_list
+                    (identifier)))
+                (math_expression
+                  (call_expression
+                    (identifier)
+                    (argument_list
+                      (identifier)))
+                  (math_expression
+                    (call_expression
+                      (identifier)
+                      (argument_list
+                        (identifier)))
+                    (identifier))))
+              (statement_label)
+              (keyword_statement)
+              (else_clause
+                (assignment_statement
+                  (call_expression
+                    (identifier)
+                    (argument_list
+                      (identifier)))
+                  (call_expression
+                    (identifier)
+                    (argument_list
+                      (call_expression
+                        (identifier)
+                        (argument_list
+                          (identifier)))))))
+              (end_if_statement))
+            (assignment_statement
+              (identifier)
+              (math_expression
+                (identifier)
+                (identifier)))
+            (assignment_statement
+              (identifier)
+              (math_expression
+                (math_expression
+                  (math_expression
+                    (identifier)
+                    (identifier))
+                  (identifier))
+                (number_literal)))
+            (statement_label)
+            (keyword_statement))
+          (end_if_statement)))
+      (end_if_statement))
+    (comment)
+    (keyword_statement)
+    (comment)
+    (comment)
+    (comment)
+    (end_subroutine_statement)))
