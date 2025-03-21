@@ -159,9 +159,29 @@ static bool is_comment_character(TSLexer *lexer) {
     return (character_in_first_column || lexer->lookahead == '!');
 }
 
+static bool is_line_continuation(TSLexer *lexer) {
+    // Although tabs are non-standard, it's a very common extension to
+    // allow a tab followed by a single digit as a continuation (gcc,
+    // intel, lfortran all support this)
+    if (lexer->lookahead == '\t') {
+        skip(lexer);
+        return iswdigit(lexer->lookahead);
+    }
+
+    // Keep consuming whitespace until column 5
+    // We're now either in a line continuation or between
+    // statements, so we should eat all whitespace including
+    // newlines, until we come to something more interesting
+    while (lexer->lookahead == ' ') {
+        skip(lexer);
+    }
+
+    return get_column(lexer) == 5 && !iswblank(lexer->lookahead);
+}
+
 static bool scan_continuation(TSLexer *lexer) {
     // These appear on the _next_ line in column 6 (1-indexed)
-    if (get_column(lexer) == 5 && !iswblank(lexer->lookahead)) {
+    if (is_line_continuation(lexer)) {
         skip(lexer);
         lexer->result_symbol = LINE_CONTINUATION;
         return true;
@@ -174,13 +194,17 @@ static bool skip_literal_continuation_sequence(TSLexer *lexer) {
     if (lexer->lookahead != '&') {
         return true;
     }
-
+    // Eat the ampersand
     skip(lexer);
-    while (iswspace(lexer->lookahead)) {
+    // Eat any whitespace to the end of the line
+    while (iswblank(lexer->lookahead) && lexer->lookahead != '\n') {
         skip(lexer);
     }
+    // Eat the new line
+    skip(lexer);
 
-    if (get_column(lexer) == 5 && !iswblank(lexer->lookahead)) {
+    // Now check there's a continuation character
+    if (is_line_continuation(lexer)) {
         skip(lexer);
         return true;
     }
@@ -267,14 +291,6 @@ static bool scan_end_of_statement(TSLexer *lexer) {
             // end-of-statement
             return false;
         }
-    }
-
-    // Keep consuming whitespace until column 5
-    // We're now either in a line continuation or between
-    // statements, so we should eat all whitespace including
-    // newlines, until we come to something more interesting
-    while (iswspace(lexer->lookahead)) {
-        skip(lexer);
     }
 
     // Right, now we need to check for fixed-form continuation markers.

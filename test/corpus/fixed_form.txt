@@ -41,8 +41,9 @@ Line continuations
      +    .OR. ANOTHER_THING) THEN
         BAR = 2
       END IF
-      AAPQ = MAX
-     $      / MIN
+      AAPQ = (MAX
+     $      / MIN)
+	1       * 2
       END
 ---
 
@@ -64,8 +65,11 @@ Line continuations
     (assignment_statement
       (identifier)
       (math_expression
-        (identifier)
-        (identifier)))
+        (parenthesized_expression
+          (math_expression
+            (identifier)
+            (identifier)))
+          (number_literal)))
     (end_program_statement)))
 
 ====================
