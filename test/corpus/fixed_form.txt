@@ -121,12 +121,18 @@ Line continuation string literal
 
       print*,'start
      +        stop'
+      print*,"this is "&
+     +" one literal"
       END
 
 ---
 
 (translation_unit
   (program
+    (print_statement
+      (format_identifier)
+      (output_item_list
+        (string_literal)))
     (print_statement
       (format_identifier)
       (output_item_list
@@ -215,8 +221,10 @@ Interface (explicit)
       (interface_statement
         (name))
       (procedure_statement
+        (procedure_kind)
         (method_name))
       (procedure_statement
+        (procedure_kind)
         (method_name))
       (end_interface_statement))
     (variable_declaration
@@ -588,10 +596,11 @@ c     .. Parameters ..
       (identifier))
     (comment)
     (comment)
-    (statement_function
-      (identifier)
-      (argument_list
-        (identifier))
+    (assignment_statement
+      (call_expression
+        (identifier)
+        (argument_list
+          (identifier)))
       (math_expression
         (call_expression
           (identifier)

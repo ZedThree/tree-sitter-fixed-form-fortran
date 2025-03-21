@@ -13,6 +13,7 @@ enum TokenType {
     STRING_LITERAL_KIND,
     END_OF_STATEMENT,
     PREPROC_UNARY_OPERATOR,
+    HOLLERITH_CONSTANT,
     COMMENT,
 };
 
@@ -168,6 +169,70 @@ static bool scan_continuation(TSLexer *lexer) {
     return false;
 }
 
+// If in the middle of a literal, '&' is required in both lines
+static bool skip_literal_continuation_sequence(TSLexer *lexer) {
+    if (lexer->lookahead != '&') {
+        return true;
+    }
+
+    skip(lexer);
+    while (iswspace(lexer->lookahead)) {
+        skip(lexer);
+    }
+
+    if (get_column(lexer) == 5 && !iswblank(lexer->lookahead)) {
+        skip(lexer);
+        return true;
+    }
+    return false;
+}
+
+/// Need to dynamically determining the length of the Hollerith constant
+static bool scan_hollerith_constant(TSLexer *lexer) {
+    // Try to parse nH<text> where n is the number of characters in <text>
+
+    // Read integer prefix 'n'
+    unsigned length = 0;
+    while (iswdigit(lexer->lookahead)) {
+        unsigned new_length = length * 10 + (lexer->lookahead - '0');
+        // The number of characters has no limit but overflow has to be handled
+        if (new_length < length) {
+            return false;
+        }
+        length = new_length;
+        advance(lexer);
+
+        if (!skip_literal_continuation_sequence(lexer)) {
+            return false;
+        }
+    }
+
+    // 0 is invalid 'n' in Hollerith constants
+    if (length == 0) {
+        return false;
+    }
+
+    // Expect 'H' or 'h'
+    if (lexer->lookahead != 'H' && lexer->lookahead != 'h') {
+        return false;
+    }
+    advance(lexer);
+
+    // Read exactly 'n' characters
+    for (int i = 0; i < length; i++) {
+        if (!lexer->lookahead || lexer->eof(lexer)) {
+            return false;
+        }
+        if (!skip_literal_continuation_sequence(lexer)) {
+            return false;
+        }
+        advance(lexer);
+    }
+    lexer->result_symbol = HOLLERITH_CONSTANT;
+    lexer->mark_end(lexer);
+    return true;
+}
+
 static bool scan_end_of_statement(TSLexer *lexer) {
     // Things that end statements in Fortran:
     //
@@ -220,6 +285,7 @@ static bool scan_end_of_statement(TSLexer *lexer) {
     lexer->result_symbol = END_OF_STATEMENT;
     return true;
 }
+
 static bool scan_string_literal_kind(TSLexer *lexer) {
   // Strictly, it's allowed for the kind to be an integer literal, in
   // practice I've not seen it
@@ -276,8 +342,11 @@ static bool scan_string_literal(TSLexer *lexer) {
         // both of them
         if (lexer->lookahead == opening_quote) {
             advance(lexer);
-            // It was just one quote, so we've successfully reached the
-            // end of the literal
+            // It was just one quote, so we've successfully reached
+            // the end of the literal. We also need to check that an
+            // escaped quote isn't split in half by a line
+            // continuation -- people do this!
+            skip_literal_continuation_sequence(lexer);
             if (lexer->lookahead != opening_quote) {
                 return true;
             }
@@ -343,6 +412,12 @@ static bool scan(TSLexer *lexer, const bool *valid_symbols) {
         }
     }
 
+    if (valid_symbols[HOLLERITH_CONSTANT]) {
+        if (scan_hollerith_constant(lexer)) {
+            return true;
+        }
+    }
+    
     if (valid_symbols[INTEGER_LITERAL] || valid_symbols[FLOAT_LITERAL] ||
         valid_symbols[BOZ_LITERAL]) {
         // extract out root number from expression
